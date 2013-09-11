@@ -121,6 +121,7 @@
               <li>Double / missed callbacks</li>
               <li>Ad-hoc ironing out of flow control kinks</li>
               <li>Not handling errors (effectively)</li>
+              <li>To nextTick or not nextTick</li>
             </ul>
 
             <aside class="notes">
@@ -302,7 +303,7 @@ task.create(function(callback) {
   }).setCallback(err, result) {
     // Back in the outer task
     if (err) throw err;
-    callback(result + 1);
+    callback(null, result + 1);
   });
 
   setTimeout(function() {
@@ -376,7 +377,7 @@ fs.readFile = function(path, options, callback_) {
       function afterClose(err) {
         if (err)
           throw err;
-        callback(result);
+        callback(null, result);
       }
     });
   }).setCallback(callback_);
@@ -399,11 +400,25 @@ fs.readFile = function(path, options, callback_) {
         <section>
           <pre>
             <code class="javascript" data-trim>
+task.create(function(callback) {
+  var conn = net.createConnection(80, 'www.google.com');
+
+  conn.on('data', function(data) {
+    callback(null, data);
+  });
+});
+            </code>
+          </pre>
+        </section>
+
+        <section>
+          <pre>
+            <code class="javascript" data-trim>
 var conn = net.createConnection(80, 'www.google.com');
 
 task.create(function(callback) {
   conn.on('data', function(data) {
-    callback(data);
+    callback(null, data);
   });
 });
             </code>
@@ -431,7 +446,7 @@ var conn = net.createConnection(80, 'www.google.com');
 
 task.create(function(callback) {
   conn.on('data', function(data) {
-    callback(data);
+    callback(null, data);
   });
 
   conn.on('error', function(err) {
