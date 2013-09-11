@@ -88,7 +88,7 @@
           <aside class="notes">
             So this talk has two parts.
             The first part is kind of abstract and it's a lot of words. The second part will be concrete but I'd ask you to pay attention during the abstract part so you understand where I come from.
-
+            <br/>
             So at times when I should be working on execSync.
             In would visit websites.
             Like hacker news.
@@ -104,8 +104,10 @@
             This was the node summer of bikeshedding.
             I'm sorry for being so northern hemisphere normative btw.
             In fact it was so bad that Isaac could barely keep himself under control.
+            <br/>
             But you know what.
             These people have a point.
+            <br/>
             Even if we know what Node one zero is going to look like, it's not done.
             There will be a successor to node one no matter what it's called.
             So let's get the discussion started.
@@ -203,7 +205,7 @@ function download(url, filename, cb) {
             A repetition. A decision.
             Nobody will argue that a for loop isn't a glorified goto statement.
             People prefer "high level" constructs because they express structure.
-
+            <br/>
             Now node has not only callbacks but also EventEmitters.
             So here's a question for you to chew on while I babble on.
             What kind of structure does an EventEmitter express?
@@ -230,13 +232,17 @@ function download(url, filename, cb) {
             It is mostly about the christmas tree thing but for many people that's the least of their concerns.
             And there's Mikeal and Isaacs.
             In my opinion eventually we'll use something akin to coroutines or generators to soothen that pain, but that's not the topic of this talk.
-
+            <br/>
             So this is what I set out to create.
-
+            <br/>
             I want to think about it as a language construct. It can't be a language extension but it should be similar. So it should be universal and transcend how node works and what you can do with the standard library.
+            <br/>
             It should help with reasonable error handling. Like domains but proper.
+            <br/>
             Make it as obvious as possible. To the extent that it inevitably has opinionated parts you're welcome to discuss it with me.
-            It should be in core. Now I don't control core so in the meantime I will fork node and try to make something better. If I turn out to be wrong then no harm done. Don't get scared yet. More about it later.
+            <br/>
+            It should be in core. Now I don't control core so in the meantime I will fork node and try to make something better. If I turn out to be wrong then there's no harm done. Don't get scared - it is not my intention to fork the community too. In fact:
+            <br/>
             It shouldn't break stuff that already works in node. If this were a biology conference I would make it a race and not a species.
           </aside>
         </section>
