@@ -67,6 +67,7 @@
 
       <!-- Any section element inside of this container is displayed as a slide -->
       <div class="slides">
+        <section></section>
         <section>
           <h3>Bert Belder</h3>
           <br>
@@ -75,60 +76,68 @@
           </p>
           <br/>
           <p>
-            node and libuv and strongloop
+            node and libuv
           </p>
+          <img src="img/logo-strongloop.png">
         </section>
 
         <section>
-          <h2></h2>
-          <p class="fragment"><q>"Future of asynchronous programming in node"</q></p>
-          <p class="fragment"><q>"The future of node streams. We need to talk"</q></p>
-          <p class="fragment"><q>"Callbacks as our Generations' Go To Statement"</q></p>
-
+          <h2>node.js 2.0</h2>
           <aside class="notes">
+            This is a trolly slide. Node 1 isn't even there yet, but it will be soon.
+            Let's start thinking about node 2.
+            <br/>
             So this talk has two parts.
             The first part is kind of abstract and it's a lot of words. The second part will be concrete but I'd ask you to pay attention during the abstract part so you understand where I come from.
-            <br/>
-            So at times when I should be working on execSync.
-            In would visit websites.
-            Like hacker news.
-            And like the node mailing list.
-            And there's people there and they are ranting and trolling and gossiping and being stupid.
-            So here are some quotes.
-          </aside>
-        </section>
-
-        <section>
-          <h2>node 2</h2>
-          <aside class="notes">
-            This was the node summer of bikeshedding.
-            I'm sorry for being so northern hemisphere normative btw.
-            In fact it was so bad that Isaac could barely keep himself under control.
-            <br/>
-            But you know what.
-            These people have a point.
-            <br/>
-            Even if we know what Node one zero is going to look like, it's not done.
-            There will be a successor to node one no matter what it's called.
-            So let's get the discussion started.
-          </aside>
+        </aside>
         </section>
 
         <section>
           <section>
             <h2></h2>
-            <ul>
-              <li>Double / missed callbacks</li>
-              <li>Ad-hoc ironing out of flow control kinks</li>
-              <li>Not handling errors (effectively)</li>
-              <li>To nextTick or not nextTick</li>
-            </ul>
+            <p class="fragment"><q>"Future of asynchronous programming in node"</q></p>
+            <p class="fragment"><q>"The future of node streams. We need to talk"</q></p>
+            <p class="fragment"><q>"Callbacks as our Generations' Go To Statement"</q></p>
 
             <aside class="notes">
-              So here's a bunch of things that people struggle with and cause bugs in node code.
-              I was opportunistic and I picked issues that I think we can solve.
-              There are others of course like 64-bit integers and the christmas tree problem but that's not what my talk is about.
+              So at times when I should be working on execSync.
+              In would visit websites.
+              Like hacker news.
+              And like the node mailing list.
+              And there's people there and they are ranting and trolling and gossiping and being stupid.
+              So here are some quotes.
+              <br/>
+              So callbacks truly *are* the goto statement of our generation.
+              The difference is that a goto statement expresses what your processor does.
+              Versus a while loop, a for loop, an if statement encapsulates meaning.
+              A repetition. A decision.
+              Nobody will argue that a for loop isn't a glorified goto statement.
+              People prefer "high level" constructs because they express structure.
+              <br/>
+              Now node has not only callbacks but also EventEmitters.
+              So here's a question for you to chew on while I babble on.
+              What kind of structure does an EventEmitter express?
             </aside>
+          </section>
+
+          <section>
+            <pre>
+              <code class="javascript">
+  list 30-70
+  30 rem Paint character
+  40 x = 4
+  50 y = 5
+  60 r = 80
+  70 GOTO 1000
+  80 rem Done
+
+  list 1000-1030
+  1000 rem Subroutine for painting -☻-
+  1010 LOCATE y, x
+  1020 PRINT "-" + CHR$(2) + "-"
+  1030 GOTO r
+              </code>
+            </pre>
           </section>
 
           <section>
@@ -147,6 +156,50 @@ process.on('exit', function() {
 });
               </code>
             </pre>
+          </section>
+
+          <section>
+            <pre>
+              <code class="javascript" data-trim>
+TransformStream.prototype.pull = function(data, cb) {
+  // Call the user's _transform function.
+  var sync = true;
+
+  var transformCb = function(data) {
+    if (sync) {
+      process.nextTick(function() {
+        cb(data);
+      });
+    } else {
+      cb(data);
+    }
+  };
+
+  this._transform(data, cb);
+
+  sync = false;
+}
+              </code>
+            </pre>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2></h2>
+            <ul>
+              <li>Double / missed callbacks</li>
+              <li>Not handling errors (effectively)<br />
+                  <i>The intern wrote the contact form problem</i></li>
+              <li>Ad-hoc ironing out of flow control kinks</li>
+              <li>To nextTick or not nextTick</li>
+            </ul>
+
+            <aside class="notes">
+              So here's a bunch of things that people struggle with and cause bugs in node code.
+              I was opportunistic and I picked issues that I think we can solve.
+              There are others of course like 64-bit integers and the christmas tree problem but that's not what my talk is about.
+            </aside>
           </section>
 
           <section>
@@ -197,30 +250,16 @@ function download(url, filename, cb) {
         </section>
 
         <section>
-          <p class="fragment"><q>Callbacks as our Generations' Go To Statement</q></p>
 
-          <aside class="notes">
-            So callbacks truly *are* the goto statement of our generation.
-            The difference is that a goto statement expresses what your processor does.
-            Versus a while loop, a for loop, an if statement encapsulates meaning.
-            A repetition. A decision.
-            Nobody will argue that a for loop isn't a glorified goto statement.
-            People prefer "high level" constructs because they express structure.
-            <br/>
-            Now node has not only callbacks but also EventEmitters.
-            So here's a question for you to chew on while I babble on.
-            What kind of structure does an EventEmitter express?
-          </aside>
         </section>
 
         <section>
           <ul>
-            <li class="fragment">"construct" for working with callbacks</li>
-            <li class="fragment">express intent over inner workings</li>
+            <li class="fragment">"construct" for managing callbacks better</li>
+            <li class="fragment">express intent and abstraction, not flow control</li>
             <li class="fragment">build <i>robust</i> applications</li>
             <li class="fragment">un-opinionated</li>
             <li class="fragment">doesn't break existing apps/modules</li>
-            <li class="fragment">in core!</li>
           </ul>
 
           <aside class="notes">
@@ -254,9 +293,11 @@ function download(url, filename, cb) {
         </section>
 
         <section>
-          <pre>
-            <code class="javascript" data-trim>
-try_async(callback) {
+          <section>
+            <pre>
+              <code class="javascript" data-trim>
+try_async {
+
   // Do async stuff.
   // Eventually:
   succeed_with 42;
@@ -268,8 +309,29 @@ try_async(callback) {
   // We get here when all async stuff
   // in the try_async block is over.
 }
-            </code>
-          </pre>
+              </code>
+            </pre>
+          </section>
+
+          <section>
+            <pre>
+              <code class="javascript" data-trim>
+try_async {
+  setTimeout(function() {
+    // Do async stuff.
+    // Eventually:
+    succeed_with 42;
+
+    // Or you might:
+    throw new Error('Вы облажался');
+  }, 100);
+} catch_finally_async(err, result) {
+  // We get here when all async stuff
+  // in the try_async block is over.
+}
+              </code>
+            </pre>
+          </section>
         </section>
 
         <section>
@@ -294,19 +356,22 @@ task.create(function(callback) {
         <section>
           <pre>
             <code class="javascript" data-trim>
-task.create(function(callback) {
+task.create(function(complete) {
   // Within the outer task.
 
-  task.create(function(callback) {
+  task.create(function(complete) {
     // Within a nested task.
+    fs.stat(...);
+    http.get(...);
 
   }).setCallback(err, result) {
     // Back in the outer task
     if (err) throw err;
-    callback(null, result + 1);
+    clearTimeout(timeout);
+    complete(null, result + 1);
   });
 
-  setTimeout(function() {
+  var timeout = setTimeout(function() {
     // In the outer task too.
     throw new Error("It's too slow");
   }, 100);
@@ -318,6 +383,7 @@ task.create(function(callback) {
           </pre>
         </section>
 
+<!--
         <section>
           <h2></h2>
           <ul>
@@ -385,12 +451,13 @@ fs.readFile = function(path, options, callback_) {
             </code>
           </pre>
         </section>
-
+-->
         <section>
         </section>
 
-        <section data-background="img/shit.png">
-          <h1 style="color: #f00">EventEmitter</h1>
+        <section data-background="img/bean.jpg">
+          <h1 style="color: #f00"><br/>
+            EventEmitter</h1>
           <aside class="notes">
             It's almost too good to be true, isn't it?
             But we have one problem.
@@ -414,7 +481,7 @@ task.create(function(callback) {
         <section>
           <pre>
             <code class="javascript" data-trim>
-var conn = net.createConnection(80, 'www.google.com');
+var conn = mysql.createConnection(80, 'www.google.com');
 
 task.create(function(callback) {
   conn.on('data', function(data) {
@@ -464,6 +531,7 @@ task.create(function(callback) {
           </ul>
         </section>
 
+<!--
         <section>
           <h2></h2>
           <p style="text-align: center">
@@ -773,6 +841,15 @@ task.create(function(callback) {
             </table>
           </p>
         </section>
+-->
+
+        <section>
+          <img src="img/timeline-no-task-1.png" style="width: 100%">
+        </section>
+
+        <section>
+          <img src="img/timeline-no-task-2.png" style="width: 100%">
+        </section>
 
         <section>
           <img src="img/timeline-task-1.png" style="width: 100%">
@@ -820,15 +897,17 @@ Task: OuterTask (lib/index.js:1:13)
 
 
         <section>
-          <h2>Hello nu.js</h2>
+          <h2>What's next?</h2>
           <p>
-            <br/>
-            <a href="http://github.com/nujs/nu">http://github.com/nujs/nu</a><br/>
-            <a href="http://nujs.github.io/nodeland-2013">http://nujs.github.io/nodeland-2013</a><br/>
-            <br/>
+            Follow me :-)<br>
+            <a href="https://twitter.com/piscisaureus">https://twitter.com/piscisaureus</a><br><br>
           </p>
           <p>
-            Bikeshedding workshop!
+            Talk to me!
+          </p>
+          <p>
+            <br/>
+            <img src="img/bert.gif" style="width: 320px;">
           </p>
         </section>
 
