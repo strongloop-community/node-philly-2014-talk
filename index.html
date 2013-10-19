@@ -81,6 +81,45 @@
         </section>
 
         <section>
+          <p>
+            <a href="https://gist.github.com/piscisaureus/7049638">http://bit.ly/wrongcode</a>
+          </p>
+          <pre>
+            <code class="javascript" style="font-size: 1em" data-trim>
+var http = require('http');
+var cache = {};
+
+function curl(url, cb) {
+  if (cache[url])
+    return cb(null, cache[url]);
+
+  var data = '';
+
+  http.get(url, function(res) {
+    res.setEncoding('utf8');
+
+    res.on('data', function(s) {
+      data += s;
+    });
+
+    res.on('end', function() {
+      cache[url] = data;
+      cb(null, data);
+    });
+
+    res.on('error', function(err) {
+      cb(err);
+    });
+  });
+}
+
+// Usage:
+curl('http://www.google.com', console.log);
+            </code>
+          </pre>
+        </section>
+
+        <section>
           <h2>node.js 2.0</h2>
           <aside class="notes">
             This is a trolly slide. Node 1 isn't even there yet, but it will be soon.
@@ -189,7 +228,7 @@ TransformStream.prototype.pull = function(data, cb) {
             <ul>
               <li>Double / missed callbacks</li>
               <li>Not handling errors (effectively)<br />
-                  <i>The intern wrote the contact form problem</i></li>
+                  <i>The intern wrote the contact form</i></li>
               <li>Ad-hoc ironing out of flow control kinks</li>
               <li>To nextTick or not nextTick</li>
             </ul>
@@ -199,52 +238,6 @@ TransformStream.prototype.pull = function(data, cb) {
               I was opportunistic and I picked issues that I think we can solve.
               There are others of course like 64-bit integers and the christmas tree problem but that's not what my talk is about.
             </aside>
-          </section>
-
-          <section>
-              <pre>
-                <code class="javascript" style="font-size: 1em" data-trim>
-var Url = require('url'),
-    Http = require('http'),
-    Fs = require('fs');
-
-
-function download(url, filename, cb) {
-  var urlObject = Url.parse(url),
-      file;
-
-  var request = Http.get(urlObject, function(res) {
-    if (res.statusCode != 200) {
-      makeCallback(new Error("HTTP Error: " + res.statusCode));
-      return;
-    }
-
-    file = Fs.createWriteStream(filename);
-    res.pipe(file);
-
-    file.on('error', function() {
-      file.destroy();
-    });
-
-    file.on('close', function() {
-      file = null;
-      makeCallback();
-    });
-  });
-
-  request.on('error', function(err) {
-    if (file) file.destroy();
-    makeCallback(err);
-  });
-
-  function makeCallback(err) {
-    if (!cb) return;
-    cb(err);
-    cb = null;
-  }
-}
-              </code>
-            </pre>
           </section>
         </section>
 
@@ -332,7 +325,7 @@ try_async {
         <section>
           <pre>
             <code class="javascript" data-trim>
-task.create(function(callback) {
+domain.task(function(callback) {
   // Do async stuff.
   // Eventually:
   callback(null, 42);
@@ -351,10 +344,10 @@ task.create(function(callback) {
         <section>
           <pre>
             <code class="javascript" data-trim>
-task.create(function(complete) {
+domain.task(function(complete) {
   // Within the outer task.
 
-  task.create(function(complete) {
+  domain.task(function(complete) {
     // Within a nested task.
     fs.stat(...);
     http.get(...);
@@ -379,74 +372,40 @@ task.create(function(complete) {
         </section>
 
         <section>
-          <h2></h2>
-          <ul>
-            <li><code class="javascript">fs.readFile('/foo/bar', cb)</code></li>
-            <li>100 lines of code</li>
-          </ul>
-        </section>
-
-        <section>
           <pre>
             <code class="javascript" data-trim>
-fs.readFile = function(path, options, callback_) {
-  ...
+var http = require('http');
+var cache = {};
 
-  function afterRead(er, bytesRead) {
-    if (er) {
-      return fs.close(fd, function(er2) {
-        return callback(er);
+function curl(url, cb) {
+  domain.task(function(complete) {
+    if (cache[url])
+      return complete(null, cache[url]);
+
+    var data = '';
+
+    http.get(url, function(res) {
+      res.setEncoding('utf8');
+
+      res.on('data', function(s) {
+        data += s;
       });
-    }
 
-    ...
-  }
-
-  ...
-}
-            </code>
-          </pre>
-        </section>
-
-        <section>
-          <pre>
-            <code class="javascript" style="font-size: 1em" data-trim>
-fs.readFile = function(path, options, callback_) {
-  return task.create(function(callback) {
-    fs.open(path, function(err, fd) {
-      if (err) throw err;
-
-      var result = '', offset = 0;
-      doRead();
-
-      function doRead() {
-        fs.read(fd, afterRead, offset, 65536);
-      }
-
-      function afterRead(err, data) {
-        if (err)
-          throw err;
-        if (!data.length) // EOF
-          return fs.close(fd, afterClose);
-
-        offset += data.length;
-        result += data.toString();
-        doRead();
-      }
-
-      function afterClose(err) {
-        if (err)
-          throw err;
-        callback(null, result);
-      }
+      res.on('end', function() {
+        cache[url] = data;
+        complete(null, data);
+      });
     });
-  }).setCallback(callback_);
-};
+  }).setCallback(cb);
+}
+
+// Usage:
+curl('http://www.google.com', console.log);
             </code>
           </pre>
         </section>
 
-        <section data-background="img/bean.jpg">
+        <section data-background="img/ugly.jpg">
           <h1 style="color: #f00"><br/>
             EventEmitter</h1>
           <aside class="notes">
@@ -458,11 +417,13 @@ fs.readFile = function(path, options, callback_) {
         <section>
           <pre>
             <code class="javascript" data-trim>
-task.create(function(callback) {
-  var conn = net.createConnection(80, 'www.google.com');
+domain.task(function(callback) {
+  var db = mysql.connect(80, 'www.google.com');
 
-  conn.on('data', function(data) {
-    callback(null, data);
+  db.sendQuery('SELECT * FROM GUNS');
+
+  db.on('row', function(row) {
+    console.log(row);
   });
 });
             </code>
@@ -472,21 +433,17 @@ task.create(function(callback) {
         <section>
           <pre>
             <code class="javascript" data-trim>
-var conn = mysql.createConnection(80, 'www.google.com');
+var db = mysql.connect(3306, 'localhost');
 
-task.create(function(callback) {
-  conn.on('data', function(data) {
-    callback(null, data);
+domain.task(function(callback) {
+  db.sendQuery('SELECT * FROM GUNS');
+
+  db.on('row', function(row) {
+    console.log(row);
   });
 });
             </code>
           </pre>
-
-          <aside class="notes">
-            So what if that connection fails or dies?
-            Or what if it has already failed when you add the data listener?
-            Or what if it receives an EOF and the data event never comes?
-          </aside>
         </section>
 
         <section>
@@ -495,31 +452,33 @@ task.create(function(callback) {
             <ul>
               <li class="fragment">All tasks that have a listener on a resource event are 'vulnerable'</li>
               <li class="fragment">You <i>can</i> have an error handler within a task.</li>
+              <li class="fragment">A resource has a well-defined "end"</li>
             </ul>
           </p>
+        </section>
 
-          <pre class="fragment">
+        <section>
+          <pre>
             <code class="javascript" data-trim>
-var conn = net.createConnection(80, 'www.google.com');
+var db = mysql.connect(3306, 'localhost');
 
-task.create(function(callback) {
-  conn.on('data', function(data) {
-    callback(null, data);
+domain.task(function(callback) {
+  db.sendQuery('SELECT * FROM GUNS');
+
+  db.on('row', function(row) {
+    console.log('row');
   });
 
-  conn.on('error', function(err) {
-    // You'd only need to do this if you actually wanted to
-    // handle this - because default action is implied:
-    throw err;
+  db.on('error', function(err) {
+    console.log("I don't care!");
   });
+});
+
+db.on('error', function(err) {
+  console.log("I don't care either!");
 });
             </code>
           </pre>
-
-          <ul>
-            <li class="fragment">Listeners are 'ended' when the Resource is closed</li>
-            <li class="fragment">No external .emit()</li>
-          </ul>
         </section>
 
 <!--
@@ -853,9 +812,9 @@ task.create(function(callback) {
         <section>
           <pre>
             <code class="javascript" data-trim>
-task.create(function OuterTask(callback) {
+domain.task(function OuterTask(callback) {
 
-  task.create(function InnerTask(callback) {
+  domain.task(function InnerTask(callback) {
     // beep
   }).setCallback(err, result) {
     // boop
