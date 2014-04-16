@@ -160,7 +160,7 @@ process.on('exit', function() {
           <pre>
             <code class="javascript" data-trim>
 TransformStream.prototype.pull = function(data, cb) {
-  // Call the user's _transform function.
+  // Call the user-supplied _transform(data, cb) function.
   var sync = true;
 
   var transformCb = function(data) {
@@ -184,16 +184,18 @@ TransformStream.prototype.pull = function(data, cb) {
       <section>
         <pre>
           <code class="javascript" data-trim>
-// Do this in parallel:
-setTimeout(function() {
-  throw new Error('Вы облажался');
-}, 100);
+{
+  http.get('http://2048.org', function(err, result) {
+    console.log(result);
+  });
 
-http.get('http://nyan.cat', function(err, result) {
-  console.log(result);
-})
+  // Do this in parallel:
+  setTimeout(function() {
+    throw new Error('Take out the trash!');
+  }, 9000);
+}
 
-wait_here();
+WAIT HERE ();
 
 // And then when that is all done:
 if (error) {
@@ -211,13 +213,13 @@ if (error) {
         <pre>
           <code class="javascript" data-trim>
 new Zone(function() {
-  setTimeout(function() {
-    throw new Error('Вы облажался');
-  }, 100);
-
   http.get('http://nyan.cat', function(err, result) {
     zone.return(result);
-  })
+  });
+  
+  setTimeout(function() {
+    throw new Error('Take out the trash!');
+  }, 9000000);
 
 }).setCallback(function(err, result) {
   if (err)
@@ -232,13 +234,13 @@ new Zone(function() {
         <pre>
           <code class="javascript" data-trim>
 new Zone(function() {
-  setTimeout(function() {
-    throw new Error('Вы облажался');
-  }, 100);
-
-  http.get('http://nyan.cat', function(err, result) {
+  http.get('http://zombo.com', function(err, result) {
     zone.return(result);
-  })
+  });
+  
+  setTimeout(function() {
+    throw new Error('Take out the trash!');
+  }, 9000 * 1e6);
 
 }).then(function(result) {
   console.log(result);
@@ -303,9 +305,9 @@ new Zone(function() {
 new Zone(function OuterTask() {
 
   new Zone(function InnerTask() {
-    // beep
+    ...
   }).setCallback(err, result) {
-    // boop
+    ...
  });
 
   setTimeout(function() {
@@ -355,31 +357,29 @@ while (data = yield stream.read())
 server = http.createServer().listen(8000);
 
 while (true) {
+  // Wait until a new connection comes in.
   var client = yield server.accept();
 
-  new Zone(function*() {
-    // Constructs a new parser stream that parses the data that is streamed
-    // over the http connection.
-    var jsonStream = new JSONStream(client);
-
-    var loginMsg = yield jsonStream.readOne();
-
-    // Validate login here
-
-    new Zone(function*() {
-      var channel = new mq.subscribe(loginMsg.id);
-      var msg;
-      while (msg = yield channel.readOne())
-        yield jsonStream.write(msg);
+  // Doe something with the connection
+  // ... but don't wait until we're done!
+  new Zone(function* ConnectionZone() {
+    
+    // Read data coming off the socket until EOF.
+    new Zone(function* ReadZone() {
+      var data;
+      // Wait until more data arrives.
+      while (data = yield client.read())
+        console.log(data);
     });
-
-    new Zone(function*() {
-      var msg;
-      while (msg = yield jsonStream.readOne())
-        yield channel.write(msg.targetId, msg);
-      }
+    
+    // Write hellos to the socket in parallel with reading.
+    new Zone(function* WriteZone() {
+      for (var i = 0; i < 10; i++)
+        client.write('Hello again?!\n');
     });
-  }).catch(function(err) {
+    
+  }).catch((err) => {
+    // If something went wrong, abort the connection.
     client.abort(500);
   });
 }
@@ -390,7 +390,7 @@ while (true) {
         <section></section>
 
         <section data-background="img/wedding1.png"></section>
-        <section data-background="img/wedding2.png"></section>
+        <!-- section data-background="img/wedding2.png"></section -->
 
         <section>
           <h2>Questions?</h2>
